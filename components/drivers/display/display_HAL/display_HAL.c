@@ -21,8 +21,8 @@
 #define LINE_BUFFERS (2)
 #define LINE_COUNT   (20)
 
-#define GBC_FRAME_WIDTH  256 
-#define GBC_FRAME_HEIGHT 224
+#define GBC_FRAME_WIDTH  160 
+#define GBC_FRAME_HEIGHT 144
 
 #define NES_FRAME_WIDTH 256
 #define NES_FRAME_HEIGHT 224

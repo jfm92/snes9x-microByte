@@ -5,8 +5,6 @@
 
 PROJECT_NAME := snes9x-esp32
 
-include $(IDF_PATH)/make/project.mk
-
 EXTRA_COMPONENT_DIRS := components/drivers/system_configuration \
 						components/drivers/display/backlight_ctrl \
 						components/drivers/display/ST7789 \
@@ -16,4 +14,7 @@ EXTRA_COMPONENT_DIRS := components/drivers/system_configuration \
 						components/drivers/sd_storage \
 						components/drivers/battery \
 						components/drivers/sound \
+
+include $(IDF_PATH)/make/project.mk
+
 

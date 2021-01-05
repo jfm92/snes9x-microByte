@@ -39,13 +39,13 @@
 #define REVERT_STREAM(s, o, p)	s->revert(p, o)
 #define CLOSE_STREAM(s)			s->closeStream()
 
-#define SNES_WIDTH					256
-#define SNES_HEIGHT					224
-#define SNES_HEIGHT_EXTENDED		239
+#define SNES_WIDTH					160
+#define SNES_HEIGHT					144
+#define SNES_HEIGHT_EXTENDED		144
 #define MAX_SNES_WIDTH				(SNES_WIDTH * 2)
 #define MAX_SNES_HEIGHT				(SNES_HEIGHT_EXTENDED * 2)
-#define IMAGE_WIDTH					(Settings.SupportHiRes ? MAX_SNES_WIDTH : SNES_WIDTH)
-#define IMAGE_HEIGHT				(Settings.SupportHiRes ? MAX_SNES_HEIGHT : SNES_HEIGHT_EXTENDED)
+#define IMAGE_WIDTH					SNES_WIDTH
+#define IMAGE_HEIGHT				SNES_HEIGHT
 
 #define	NTSC_MASTER_CLOCK			21477272.727272 // 21477272 + 8/11 exact
 #define	PAL_MASTER_CLOCK			21281370.0

@@ -20,14 +20,15 @@
 #include "conffile.h"
 
 extern "C" {
-	//#define ODROID_TASKS_USE_CORE 0
 	#include "esp_system.h"
 	#include "esp_heap_caps.h"
-	//#include "odroid.h"
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/task.h"
+	#include "sd_storage.h"
+	#include "display_HAL.h"
+	#include "freertos/queue.h"
 }
-
+QueueHandle_t vidQueue;
 #define MAP_BUTTON(id, name) S9xMapButton((id), S9xGetCommandT((name)), false)
 
 uint32_t timer = 0;
@@ -232,9 +233,10 @@ void S9xExit (void)
 void S9xInitDisplay (int argc, char **argv)
 {
 	// Setup SNES buffers
-	GFX.Pitch = SNES_WIDTH * 2;
-	GFX.Screen = (uint16 *) heap_caps_malloc(GFX.Pitch * SNES_HEIGHT_EXTENDED *2, MALLOC_CAP_8BIT);
+	GFX.Pitch = SNES_WIDTH ;
+	GFX.Screen = (uint16 *) heap_caps_malloc(GFX.Pitch * SNES_HEIGHT_EXTENDED *2, MALLOC_CAP_8BIT );
 	if(GFX.Screen == NULL) printf("Error\r\n");
+	printf("GFX screen allocation: %i\r\n",GFX.Pitch * SNES_HEIGHT_EXTENDED *2);
 	S9xGraphicsInit();
 }
 
@@ -254,6 +256,7 @@ bool8 S9xDeinitUpdate (int width, int height)
 	//spi_lcd_fb_update();
 	//spi_lcd_fb_flush();
 	//TODO: Add here call that the frame is ready to be send
+	xQueueSend(vidQueue, &GFX.Screen, 0);
 	return (TRUE);
 }
 
@@ -267,10 +270,32 @@ void snes_ppu_task(void *arg)
 	}
 }
 
+static void videoTask(void *arg){
+
+    uint16_t *param;
+
+    //Send empty frame
+    display_HAL_gb_frame(NULL);
+    
+    while(1){
+        xQueuePeek(vidQueue, &param, portMAX_DELAY);
+        display_HAL_gb_frame(param);
+        xQueueReceive(vidQueue, &param, portMAX_DELAY);
+    }
+
+    vTaskDelete(NULL);
+}
+
 
 void snes_task(void *arg) // IRAM_ATTR
 {
 	printf("snes task started\r\n");
+	display_HAL_init();
+	display_HAL_change_endian();
+	display_HAL_clear();
+	vidQueue = xQueueCreate(7, sizeof(uint16_t *));
+	xTaskCreatePinnedToCore(&videoTask, "videoTask", 1024*2, NULL, 1, NULL, 1);
+	sd_init();
 
 	memset(&Settings, 0, sizeof(Settings));
 	Settings.SupportHiRes = FALSE;
@@ -280,8 +305,8 @@ void snes_task(void *arg) // IRAM_ATTR
 	Settings.HDMATimingHack = 100;
 	Settings.BlockInvalidVRAMAccessMaster = TRUE;
 	Settings.StopEmulation = TRUE;
-	Settings.SkipFrames = AUTO_FRAMERATE;
-	Settings.TurboSkipFrames = 15;
+	Settings.SkipFrames = 1;
+	Settings.TurboSkipFrames = 1;
 	Settings.CartAName[0] = 0;
 	Settings.CartBName[0] = 0;
 
