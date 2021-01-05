@@ -20,16 +20,15 @@
 #include "conffile.h"
 
 extern "C" {
-	#define ODROID_TASKS_USE_CORE 0
+	//#define ODROID_TASKS_USE_CORE 0
 	#include "esp_system.h"
 	#include "esp_heap_caps.h"
-	#include "odroid.h"
+	//#include "odroid.h"
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/task.h"
 }
 
 #define MAP_BUTTON(id, name) S9xMapButton((id), S9xGetCommandT((name)), false)
-#define MEMORY_BYTES printf("Free Memory: %d %d\n", free_bytes_internal(), free_bytes_spiram());
 
 uint32_t timer = 0;
 uint32_t loops = 0;
@@ -234,8 +233,8 @@ void S9xInitDisplay (int argc, char **argv)
 {
 	// Setup SNES buffers
 	GFX.Pitch = SNES_WIDTH * 2;
-	GFX.Screen = (uint16 *) spi_lcd_fb_getPtr();
-	//GFX.Screen = (uint16 *) heap_caps_calloc(GFX.Pitch * (SNES_HEIGHT_EXTENDED + 4), 1, MALLOC_CAP_SPIRAM);
+	GFX.Screen = (uint16 *) heap_caps_malloc(GFX.Pitch * SNES_HEIGHT_EXTENDED *2, MALLOC_CAP_8BIT);
+	if(GFX.Screen == NULL) printf("Error\r\n");
 	S9xGraphicsInit();
 }
 
@@ -252,19 +251,11 @@ bool8 S9xInitUpdate (void)
 
 bool8 S9xDeinitUpdate (int width, int height)
 {
-	spi_lcd_fb_update();
+	//spi_lcd_fb_update();
 	//spi_lcd_fb_flush();
+	//TODO: Add here call that the frame is ready to be send
 	return (TRUE);
 }
-
-
-void snes_input_callback(odroid_input_state state)
-{
-	for (int i = 0; i < ODROID_INPUT_MAX; i++) {
-		S9xReportButton(i, state.values[i]);
-	}
-}
-
 
 void snes_ppu_task(void *arg)
 {
@@ -279,7 +270,7 @@ void snes_ppu_task(void *arg)
 
 void snes_task(void *arg) // IRAM_ATTR
 {
-	odroid_input_set_callback(&snes_input_callback);
+	printf("snes task started\r\n");
 
 	memset(&Settings, 0, sizeof(Settings));
 	Settings.SupportHiRes = FALSE;
@@ -306,9 +297,9 @@ void snes_task(void *arg) // IRAM_ATTR
 
 	bool8 loaded = FALSE;
 
-	odroid_spi_bus_acquire();
+	//odroid_spi_bus_acquire();
 	loaded = Memory.LoadROM((const char*)arg);
-	odroid_spi_bus_release();
+	//odroid_spi_bus_release();
 
 	if (!loaded)
 	{
@@ -330,7 +321,7 @@ void snes_task(void *arg) // IRAM_ATTR
 	S9xInitInputDevices();
 	S9xInitDisplay(NULL, 0);
 
-    MAP_BUTTON(ODROID_INPUT_A, "Joypad1 A");
+    /*MAP_BUTTON(ODROID_INPUT_A, "Joypad1 A");
     MAP_BUTTON(ODROID_INPUT_B, "Joypad1 B");
     MAP_BUTTON(ODROID_INPUT_START, "Joypad1 X");
     MAP_BUTTON(ODROID_INPUT_SELECT, "Joypad1 Y");
@@ -343,7 +334,7 @@ void snes_task(void *arg) // IRAM_ATTR
     MAP_BUTTON(ODROID_INPUT_UP, "Joypad1 Up");
     MAP_BUTTON(ODROID_INPUT_DOWN, "Joypad1 Down");
 
-	MEMORY_BYTES;
+	MEMORY_BYTES;*/
 
 	while (1)
 	{

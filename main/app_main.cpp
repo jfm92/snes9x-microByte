@@ -9,8 +9,6 @@
 #include "memmap.h"
 
 extern "C" {
-	#define ODROID_TASKS_USE_CORE 0
-	#include "odroid.h"
 	#include "esp_system.h"
 	#include "esp_heap_caps.h"
 	#include "freertos/FreeRTOS.h"
@@ -25,22 +23,10 @@ extern "C" void app_main()
 {
 	// I tried reducing DMA, Reserved memory, and whatnot but it just won't allocate a continuous 128K segment :(
 	// Internal ram is a bit faster than spiram + it makes room for loading bigger ROMS
-	Memory.RAM1 = (uint8 *) heap_caps_malloc(0x10000, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-    Memory.RAM2 = (uint8 *) heap_caps_malloc(0x10000, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-	
-	//heap_caps_malloc_extmem_enable(32768);
+	Memory.RAM1 = (uint8 *) heap_caps_malloc(0x10000,MALLOC_CAP_8BIT);
+    Memory.RAM2 = (uint8 *) heap_caps_malloc(0x10000,MALLOC_CAP_8BIT);
 
-	odroid_system_init();
-
-	spi_lcd_useFrameBuffer(true);
-	
-	char *rom_file = rom_selector();
-	
-	spi_lcd_setWindow(32, 0, 256, 240);
-	spi_lcd_print(0, 0, "Starting SNES...");
-	spi_lcd_fb_update();
-
-	xTaskCreatePinnedToCore(&snes_task, "snes_task", 1024 * 32, rom_file, 10, NULL, 1);
+	xTaskCreatePinnedToCore(&snes_task, "snes_task", 1024 * 32, NULL, 10, NULL, 1);
 	vTaskDelete(NULL);
 }
 

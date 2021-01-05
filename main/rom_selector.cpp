@@ -1,4 +1,4 @@
-extern "C" {
+/*extern "C" {
     #include <stdlib.h>
     #include <unistd.h>
     #include <stdio.h>
@@ -81,4 +81,4 @@ char * rom_selector()
         spi_lcd_fb_flush();
         // vTaskDelay
     }
-}
+}*/

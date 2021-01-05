@@ -1360,16 +1360,18 @@ bool8 CMemory::LoadROMMem (const uint8 *source, uint32 sourceSize)
 
 bool8 CMemory::LoadROM (const char *filename)
 {
-    if(!filename || !*filename)
+    /*if(!filename || !*filename)
         return FALSE;
-
+*/
+	//TODO: FIx to add different games
+	char aux_name[256] = {"/sdcard/mario.sfc"};
     int32 totalFileSize;
 
     do
     {
         memset(ROM,0, MAX_ROM_SIZE);
         memset(&Multi, 0,sizeof(Multi));
-        totalFileSize = FileLoader(ROM, filename, MAX_ROM_SIZE);
+        totalFileSize = FileLoader(ROM, aux_name, MAX_ROM_SIZE);
 
         if (!totalFileSize)
             return (FALSE);
