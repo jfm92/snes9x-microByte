@@ -21,8 +21,8 @@
 #define LINE_BUFFERS (2)
 #define LINE_COUNT   (20)
 
-#define GBC_FRAME_WIDTH  160 
-#define GBC_FRAME_HEIGHT 144
+#define GBC_FRAME_WIDTH  240 
+#define GBC_FRAME_HEIGHT 240
 
 #define NES_FRAME_WIDTH 256
 #define NES_FRAME_HEIGHT 224
@@ -68,8 +68,14 @@ static uint8_t getPixelNES(const uint8_t *bufs, uint16_t x, uint16_t y, uint16_t
  **********************/
 
 // Display HAL basic functions.
-void display_snes(){
-    ST7789_swap_buffers(&display);
+void display_snes(uint16_t * buffer_img, uint32_t size){
+    display.current_buffer = buffer_img;
+    if(size > 240*20){
+        display.buffer_size = 240*20;
+        ST7789_set_window(&display,0,0,240,20);
+    }
+
+   ST7789_swap_buffers(&display);
 }
 bool display_HAL_init(void){
     return ST7789_init(&display);
@@ -195,7 +201,7 @@ void display_HAL_NES_frame(const uint8_t *data){
                 int index = (i)*outputWidth;
 
                 for (int x = 0; x < outputWidth; x++){
-                    display.current_buffer[index++]= myPalette[getPixelNES(data, x, (y + i), outputWidth, outputHeight)];
+                    display.current_buffer[index++]= getPixelNES(data, x, (y + i), outputWidth, outputHeight);
                 }
             }
 

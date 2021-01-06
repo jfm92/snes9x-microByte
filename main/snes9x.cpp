@@ -279,7 +279,9 @@ static void videoTask(void *arg){
     
     while(1){
         xQueuePeek(vidQueue, &param, portMAX_DELAY);
-        display_HAL_gb_frame(param);
+		uint8_t * aux = (uint8_t *)param;
+        display_HAL_NES_frame(aux);
+	   //display_snes(GFX.ScreenColors,GFX.ScreenSize);
         xQueueReceive(vidQueue, &param, portMAX_DELAY);
     }
 
@@ -300,13 +302,13 @@ void snes_task(void *arg) // IRAM_ATTR
 	memset(&Settings, 0, sizeof(Settings));
 	Settings.SupportHiRes = FALSE;
 	Settings.Transparency = TRUE;
-	Settings.AutoDisplayMessages = TRUE;
+	Settings.AutoDisplayMessages = FALSE;
 	Settings.InitialInfoStringTimeout = 120;
 	Settings.HDMATimingHack = 100;
 	Settings.BlockInvalidVRAMAccessMaster = TRUE;
 	Settings.StopEmulation = TRUE;
-	Settings.SkipFrames = 1;
-	Settings.TurboSkipFrames = 1;
+	Settings.SkipFrames = AUTO_FRAMERATE;
+	Settings.TurboSkipFrames = 15;
 	Settings.CartAName[0] = 0;
 	Settings.CartBName[0] = 0;
 

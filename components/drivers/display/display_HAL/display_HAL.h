@@ -12,7 +12,7 @@
 /*********************
  *      FUNCTIONS
  *********************/
-void display_snes();
+void display_snes(uint16_t * buffer_img, uint32_t size);
 /*
  * Function:  display_HAL_init 
  * --------------------
