@@ -39,11 +39,11 @@
 #define REVERT_STREAM(s, o, p)	s->revert(p, o)
 #define CLOSE_STREAM(s)			s->closeStream()
 
-#define SNES_WIDTH					256
-#define SNES_HEIGHT					224
-#define SNES_HEIGHT_EXTENDED		239
-#define MAX_SNES_WIDTH				(SNES_WIDTH)
-#define MAX_SNES_HEIGHT				(SNES_HEIGHT_EXTENDED)
+#define SNES_WIDTH					240
+#define SNES_HEIGHT					240
+#define SNES_HEIGHT_EXTENDED		240
+#define MAX_SNES_WIDTH				(SNES_WIDTH * 2)
+#define MAX_SNES_HEIGHT				(SNES_HEIGHT_EXTENDED * 2)
 #define IMAGE_WIDTH					(Settings.SupportHiRes ? MAX_SNES_WIDTH : SNES_WIDTH)
 #define IMAGE_HEIGHT				(Settings.SupportHiRes ? MAX_SNES_HEIGHT : SNES_HEIGHT_EXTENDED)
 

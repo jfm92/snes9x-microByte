@@ -26,7 +26,7 @@ extern "C" void app_main()
 	Memory.RAM1 = (uint8 *) heap_caps_malloc(0x10000,MALLOC_CAP_8BIT);
     Memory.RAM2 = (uint8 *) heap_caps_malloc(0x10000,MALLOC_CAP_8BIT);
 
-	xTaskCreatePinnedToCore(&snes_task, "snes_task", 1024 * 32, NULL, 1, NULL, 0);
+	xTaskCreatePinnedToCore(&snes_task, "snes_task", 1024 * 32, NULL, 1, NULL, 1);
 	vTaskDelete(NULL);
 }
 

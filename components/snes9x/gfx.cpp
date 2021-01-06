@@ -200,6 +200,7 @@ void S9xStartScreenRefresh (void)
 
 void S9xEndScreenRefresh (void)
 {
+	
 	if (IPPU.RenderThisFrame)
 	{
 		FLUSH_REDRAW();

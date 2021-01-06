@@ -233,8 +233,8 @@ void S9xExit (void)
 void S9xInitDisplay (int argc, char **argv)
 {
 	// Setup SNES buffers
-	GFX.Pitch = SNES_WIDTH ;
-	GFX.Screen = (uint16 *) heap_caps_malloc(GFX.Pitch * SNES_HEIGHT_EXTENDED *2, MALLOC_CAP_8BIT );
+	GFX.Pitch = 480 ;
+	GFX.Screen = (uint16 *) heap_caps_malloc(256 * SNES_HEIGHT_EXTENDED *2, MALLOC_CAP_8BIT );
 	if(GFX.Screen == NULL) printf("Error\r\n");
 	printf("GFX screen allocation: %i\r\n",GFX.Pitch * SNES_HEIGHT_EXTENDED *2);
 	S9xGraphicsInit();
@@ -280,7 +280,7 @@ static void videoTask(void *arg){
     while(1){
         xQueuePeek(vidQueue, &param, portMAX_DELAY);
 		uint8_t * aux = (uint8_t *)param;
-        display_HAL_NES_frame(aux);
+        display_HAL_gb_frame(param);
 	   //display_snes(GFX.ScreenColors,GFX.ScreenSize);
         xQueueReceive(vidQueue, &param, portMAX_DELAY);
     }
@@ -296,7 +296,7 @@ void snes_task(void *arg) // IRAM_ATTR
 	display_HAL_change_endian();
 	display_HAL_clear();
 	vidQueue = xQueueCreate(7, sizeof(uint16_t *));
-	xTaskCreatePinnedToCore(&videoTask, "videoTask", 1024*2, NULL, 1, NULL, 1);
+	xTaskCreatePinnedToCore(&videoTask, "videoTask", 1024*2, NULL, 1, NULL, 0);
 	sd_init();
 
 	memset(&Settings, 0, sizeof(Settings));
@@ -307,10 +307,13 @@ void snes_task(void *arg) // IRAM_ATTR
 	Settings.HDMATimingHack = 100;
 	Settings.BlockInvalidVRAMAccessMaster = TRUE;
 	Settings.StopEmulation = TRUE;
-	Settings.SkipFrames = AUTO_FRAMERATE;
+	Settings.SkipFrames = 7;
 	Settings.TurboSkipFrames = 15;
 	Settings.CartAName[0] = 0;
 	Settings.CartBName[0] = 0;
+	Settings.BilinearFilter = FALSE;
+	//Settings.TurboMode = TRUE;
+	
 
 	S9xLoadConfigFiles(NULL, 0);
 

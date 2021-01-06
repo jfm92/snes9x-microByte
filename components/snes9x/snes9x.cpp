@@ -155,11 +155,11 @@ void S9xLoadConfigFiles (char **argv, int argc)
 
 	// Display
 
-	Settings.SupportHiRes               =  conf.GetBool("Display::HiRes",                      true);
+	Settings.SupportHiRes               =  conf.GetBool("Display::HiRes",                      false);
 	Settings.Transparency               =  conf.GetBool("Display::Transparency",               true);
 	Settings.DisableGraphicWindows      = !conf.GetBool("Display::GraphicWindows",             true);
 	Settings.DisplayTime				=  conf.GetBool("Display::DisplayTime",                false);
-	Settings.DisplayFrameRate           =  conf.GetBool("Display::DisplayFrameRate",           false);
+	Settings.DisplayFrameRate           =  conf.GetBool("Display::DisplayFrameRate",           true);
 	Settings.DisplayWatchedAddresses    =  conf.GetBool("Display::DisplayWatchedAddresses",    false);
 	Settings.DisplayPressedKeys         =  conf.GetBool("Display::DisplayInput",               false);
 	Settings.AutoDisplayMessages        =  conf.GetBool("Display::MessagesInImage",            true);
