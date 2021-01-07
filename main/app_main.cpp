@@ -23,10 +23,11 @@ extern "C" void app_main()
 {
 	// I tried reducing DMA, Reserved memory, and whatnot but it just won't allocate a continuous 128K segment :(
 	// Internal ram is a bit faster than spiram + it makes room for loading bigger ROMS
-	Memory.RAM1 = (uint8 *) heap_caps_malloc(0x10000,MALLOC_CAP_8BIT);
-    Memory.RAM2 = (uint8 *) heap_caps_malloc(0x10000,MALLOC_CAP_8BIT);
+	Memory.RAM1 = (uint8 *) heap_caps_malloc(0x10000,MALLOC_CAP_8BIT |MALLOC_CAP_SPIRAM );
+    Memory.RAM2 = (uint8 *) heap_caps_malloc(0x10000,MALLOC_CAP_8BIT |MALLOC_CAP_SPIRAM );
+	Memory.VRAM = (uint8 *) heap_caps_malloc(0x10000,MALLOC_CAP_8BIT | MALLOC_CAP_DMA );
 
-	xTaskCreatePinnedToCore(&snes_task, "snes_task", 1024 * 32, NULL, 1, NULL, 1);
+	xTaskCreatePinnedToCore(&snes_task, "snes_task", 1024 * 32, NULL, 5, NULL, 0);
 	vTaskDelete(NULL);
 }
 
