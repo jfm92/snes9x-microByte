@@ -19,6 +19,8 @@
 #include "display.h"
 #include "conffile.h"
 
+
+
 extern "C" {
 	#include "esp_system.h"
 	#include "esp_heap_caps.h"
@@ -27,14 +29,16 @@ extern "C" {
 	#include "sd_storage.h"
 	#include "display_HAL.h"
 	#include "freertos/queue.h"
+	#include "user_input.h"
 }
 QueueHandle_t vidQueue;
 #define MAP_BUTTON(id, name) S9xMapButton((id), S9xGetCommandT((name)), false)
 
 uint32_t timer = 0;
 uint32_t loops = 0;
-
-
+uint16_t * buffer0;
+uint16_t * buffer1;
+uint8_t buffer_num = 0;
 
 void S9xMessage (int type, int number, const char *message)
 {
@@ -136,9 +140,21 @@ void S9xAutoSaveSRAM (void)
 }
 
 static uint8_t skip = 0;
+uint8_t frame_render = 0;
 void S9xSyncSpeed (void)
 {
-	IPPU.RenderThisFrame = !IPPU.RenderThisFrame;
+	//IPPU.RenderThisFrame = !IPPU.RenderThisFrame;
+	if((frame_render==2)){
+		IPPU.RenderThisFrame = true;
+		IPPU.SkippedFrames=4;
+		frame_render=0;
+		
+	}
+	else{
+		frame_render++;
+		IPPU.RenderThisFrame= false;
+		
+	}
 	//IPPU.RenderThisFrame = skip == 0;
 	//if (skip++ == 10) skip = 0;
 	//IPPU.RenderThisFrame = true;
@@ -152,6 +168,8 @@ void S9xSyncSpeed (void)
 		timer = time;
 		loops = 0;
 	}
+
+	
 }
 
 bool8 S9xMapInput (const char *n, s9xcommand_t *cmd)
@@ -233,8 +251,10 @@ void S9xExit (void)
 void S9xInitDisplay (int argc, char **argv)
 {
 	// Setup SNES buffers
-	GFX.Pitch = 480 ;
-	GFX.Screen = (uint16 *) heap_caps_malloc(256 * SNES_HEIGHT_EXTENDED *2, MALLOC_CAP_8BIT );
+	GFX.Pitch = 240*2 ;
+	
+	
+	GFX.Screen = buffer0;
 	if(GFX.Screen == NULL) printf("Error\r\n");
 	printf("GFX screen allocation: %i\r\n",GFX.Pitch * SNES_HEIGHT_EXTENDED *2);
 	S9xGraphicsInit();
@@ -256,7 +276,18 @@ bool8 S9xDeinitUpdate (int width, int height)
 	//spi_lcd_fb_update();
 	//spi_lcd_fb_flush();
 	//TODO: Add here call that the frame is ready to be send
-	xQueueSend(vidQueue, &GFX.Screen, 0);
+	uint16_t aux = 0xff;
+	xQueueSend(vidQueue, &aux, 0);
+	if(buffer_num == 0){
+			GFX.Screen = buffer1;
+			buffer_num ++;
+
+		}
+		else{
+			GFX.Screen = buffer0;
+			buffer_num = 0;
+			
+		}
 	return (TRUE);
 }
 
@@ -278,16 +309,16 @@ static void videoTask(void *arg){
     display_HAL_gb_frame(NULL);
     
     while(1){
-        xQueuePeek(vidQueue, &param, portMAX_DELAY);
-		uint8_t * aux = (uint8_t *)param;
-        display_HAL_gb_frame(param);
+        //xQueuePeek(vidQueue, &param, portMAX_DELAY);
+		//uint8_t * aux = (uint8_t *)param;
+		xQueueReceive(vidQueue, &param, portMAX_DELAY);
+        display_HAL_gb_frame(GFX.Screen);
 	   //display_snes(GFX.ScreenColors,GFX.ScreenSize);
-        xQueueReceive(vidQueue, &param, portMAX_DELAY);
+       // xQueueReceive(vidQueue, &param, portMAX_DELAY);
     }
 
     vTaskDelete(NULL);
 }
-
 
 void snes_task(void *arg) // IRAM_ATTR
 {
@@ -296,8 +327,10 @@ void snes_task(void *arg) // IRAM_ATTR
 	display_HAL_change_endian();
 	display_HAL_clear();
 	vidQueue = xQueueCreate(7, sizeof(uint16_t *));
-	xTaskCreatePinnedToCore(&videoTask, "videoTask", 1024*2, NULL, 1, NULL, 0);
+	xTaskCreatePinnedToCore(&videoTask, "videoTask", 1024*2, NULL, 1, NULL, 1);
 	sd_init();
+
+	input_init();
 
 	memset(&Settings, 0, sizeof(Settings));
 	Settings.SupportHiRes = FALSE;
@@ -307,11 +340,13 @@ void snes_task(void *arg) // IRAM_ATTR
 	Settings.HDMATimingHack = 100;
 	Settings.BlockInvalidVRAMAccessMaster = TRUE;
 	Settings.StopEmulation = TRUE;
-	Settings.SkipFrames = 7;
+	Settings.SkipFrames = 4;
 	Settings.TurboSkipFrames = 15;
 	Settings.CartAName[0] = 0;
 	Settings.CartBName[0] = 0;
 	Settings.BilinearFilter = FALSE;
+
+	//Settings.MaxSpriteTilesPerLine = 2;
 	//Settings.TurboMode = TRUE;
 	
 
@@ -344,6 +379,12 @@ void snes_task(void *arg) // IRAM_ATTR
 	Settings.Paused = FALSE;
 	Settings.SoundSync = FALSE;
 
+	buffer0= (uint16 *) heap_caps_malloc(240 * SNES_HEIGHT_EXTENDED *2, MALLOC_CAP_8BIT );
+
+	buffer1 = (uint16 *) heap_caps_malloc(256 * SNES_HEIGHT_EXTENDED,MALLOC_CAP_8BIT);
+	if(buffer0==NULL) printf("buffer 0 malloc error\r\n");
+	if(buffer1==NULL) printf("buffer 1 malloc error\r\n");
+
 	S9xInitSound(0);
 	S9xReportControllers();
 	S9xSetController(0, CTL_JOYPAD, 0, 0, 0, 0);
@@ -363,11 +404,80 @@ void snes_task(void *arg) // IRAM_ATTR
     MAP_BUTTON(ODROID_INPUT_RIGHT, "Joypad1 Right");
     MAP_BUTTON(ODROID_INPUT_UP, "Joypad1 Up");
     MAP_BUTTON(ODROID_INPUT_DOWN, "Joypad1 Down");
+	
+
+
 
 	MEMORY_BYTES;*/
+	S9xMapButton(1, S9xGetCommandT("Joypad1 A"), false);
+	S9xMapButton(0, S9xGetCommandT("Joypad1 B"), false);
+	S9xMapButton(2, S9xGetCommandT("Joypad1 X"), false);
+	S9xMapButton(3, S9xGetCommandT("Joypad1 Y"), false);
+	S9xMapButton(4, S9xGetCommandT("Joypad1 Select"), false);
+	S9xMapButton(5, S9xGetCommandT("Joypad1 Start"), false);
+	S9xMapButton(6, S9xGetCommandT("Joypad1 L"), false);
+	S9xMapButton(7, S9xGetCommandT("Joypad1 R"), false);
+	S9xMapButton(8, S9xGetCommandT("Joypad1 Left"), false);
+	S9xMapButton(9, S9xGetCommandT("Joypad1 Right"), false);
+	S9xMapButton(10, S9xGetCommandT("Joypad1 Up"), false);
+	S9xMapButton(11, S9xGetCommandT("Joypad1 Down"), false);
+
 
 	while (1)
 	{
 		S9xMainLoop();
+		uint16_t inputs_value = input_read();
+
+		if(!((inputs_value >> 9) & 0x01)) S9xReportButton(0, 1);
+		else{
+			S9xReportButton(0, 0);
+		}
+		if(!((inputs_value >> 8) & 0x01)) S9xReportButton(1, 1);
+		else{
+			S9xReportButton(1, 0);
+		}
+		if(!((inputs_value >> 6) & 0x01)) S9xReportButton(2, 1);
+		else{
+			S9xReportButton(2, 0);
+		}
+		if(!((inputs_value >> 7) & 0x01)) S9xReportButton(3, 1);
+		else{
+			S9xReportButton(3, 0);
+		}
+		if(!((inputs_value >>12) & 0x01)) S9xReportButton(4, 1);
+		else{
+			S9xReportButton(4, 0);
+		}
+		if(!((inputs_value >> 10) & 0x01)) S9xReportButton(5, 1);
+		else{
+			S9xReportButton(5, 0);
+		}
+		if(!((inputs_value >> 13) & 0x01)) S9xReportButton(6, 1);
+		else{
+			S9xReportButton(6, 0);
+		}
+		if(!((inputs_value >> 5) & 0x01)) S9xReportButton(7, 1);
+		else{
+			S9xReportButton(7, 0);
+		}
+		if(!((inputs_value >> 1) & 0x01)) S9xReportButton(8, 1);
+		else{
+			S9xReportButton(8, 0);
+		}
+		if(!((inputs_value >> 3) & 0x01)) S9xReportButton(9, 1);
+		else{
+			S9xReportButton(9, 0);
+		}
+		if(!((inputs_value >> 2) & 0x01)) S9xReportButton(10, 1);
+		else{
+			S9xReportButton(10, 0);
+		}
+		if(!((inputs_value >> 0) & 0x01)) S9xReportButton(11, 1);
+		else{
+			S9xReportButton(11, 0);
+		}
+		
+		
+		
 	}
 }
