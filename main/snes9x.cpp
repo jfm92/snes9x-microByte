@@ -144,7 +144,7 @@ uint8_t frame_render = 0;
 void S9xSyncSpeed (void)
 {
 	//IPPU.RenderThisFrame = !IPPU.RenderThisFrame;
-	if((frame_render==2)){
+	if((frame_render==4)){
 		IPPU.RenderThisFrame = true;
 		IPPU.SkippedFrames=4;
 		frame_render=0;
