@@ -1364,7 +1364,7 @@ bool8 CMemory::LoadROM (const char *filename)
         return FALSE;
 */
 	//TODO: FIx to add different games
-	   char file[256]= {"/sdcard/mario.sfc"};
+	   char file[256]= {"/sdcard/SNES/game.sfc"};
 
     int32 totalFileSize;
 
